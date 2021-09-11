@@ -1,3 +1,5 @@
+:- module(check,[initFacts/2,printFact/1,checkddc/6]).
+
 :- encoding(utf8).
 
 :- debug.
@@ -136,29 +138,27 @@ setTheory(P,F,T,Is) :-
   maplist(assertz,F),
   maplist(enableTheory(T),Is).
 
-% 应用规则库 T 中索引存在于 TheoryIs 中的所有规则，在包含谓词集 P 的事实库 F 中尝试推导 HypStr
-% 若成功，则将 HypStr 及其所有排列形式添加至事实库 F 中，结果存于 Facts
-checkddc(P,T,F,TheoryIs,HypStr,Facts) :-
-  term_string(Hyp,HypStr),
-  (alreadyExist(P,F,Hyp) ->
-    % HypStr 已存在于事实库 F 中，无需进一步推导
-    writeln('==Exist=='),
-  (true);
-    setTheory(P,F,T,TheoryIs),
-    ((Hyp) ->
+% 应用规则库 T 中索引存在于 I 中的所有规则，在包含谓词集 P 的事实库 F 中尝试推导 H
+% 若成功，则将 H 及其所有排列形式添加至事实库 F 中，结果存于 A
+checkddc(P,R,I,F,A,H) :-
+  (alreadyExist(P,F,H) ->
+    % H 已存在于事实库 F 中，无需进一步推导
+    writeln('==Exist==')
+  ;
+    setTheory(P,F,R,I),
+    (H ->
       % 推导成功
       writeln('==OK=='),
       clearAll(P),
-      appendFact(F,Facts,Hyp),
+      appendFact(F,A,H),
       writeln('==NOW Facts=='),
-      printFact(Facts),
-    (true);
+      printFact(A)
+    ;
       % 推导失败
       writeln('==Wrong=='),
-      clearAll(P),
-    (true)),
-  (true)),
-  true.
+      clearAll(P)
+    )
+  ).
 
 % 初始化事实库，求出 Facts 中所有事实的所有排列形式，存于 Lib
 initFacts(Facts,Lib) :-
@@ -179,41 +179,3 @@ printFact(Facts) :-
       writeln(First),
       printFact(Rest) % 递归
   ).
-
-% 测试
-test :-
-  Preds = [
-    ['square',4],
-    ['ang45',3],
-    ['ang90',3],
-    ['eqlen',4],
-    ['parallel',4],
-    ['intersection',5],
-    ['rotate_from_tri',6]
-  ],
-  Theories = [
-    (
-      ang90(P1,P2,P3) :-
-        square(P1,P2,P3,X)
-    ),
-    (
-      eqlen(P1,P2,P2,P3) :-
-        square(P1,P2,P3,X)
-    )
-  ],
-  Facts = [
-    square(a,b,c,d),
-    eqlen(a,e,a,c),
-    parallel(d,e,a,c),
-    intersection(f,a,e,c,d),
-    rotate_from_tri(a,b,g,a,d,e)
-  ],
-  Iss = [
-    [0],
-    [1]
-  ],
-  nth0(0,Iss,Is),
-  initFacts(Facts,FF),
-  printFact(FF),
-  checkddc(Preds,Theories,FF,Is,'ang90(a,d,c)',Ans),
-  true.
