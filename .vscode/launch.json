@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Prolog Files",
+      "type": "prolog",
+      "request": "launch",
+      "runtimeExecutable": "C:\\Program Files\\swipl\\bin\\swipl.exe",
+      "runtimeArgs": [],
+      "env": {},
+      "program": "${file}",
+      "cwd": "${fileDirname}",
+      "startupQuery": "main",
+      "stopOnEntry": true,
+      "traceCmds": {
+        "continue": [
+          "leap",
+          "l"
+        ],
+        "stepover": [
+          "skip",
+          "s"
+        ],
+        "stepinto": [
+          "creep",
+          "c"
+        ],
+        "stepout": [
+          "up",
+          "u"
+        ]
+      }
+    }
+  ]
+}
