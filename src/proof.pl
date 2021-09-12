@@ -1,7 +1,4 @@
-:- module(proof,[
-  proof/6,
-  initFacts/2
-]).
+:- module(proof,[proof/6]).
 
 :- encoding(utf8).
 :- debug.
@@ -10,10 +7,9 @@
 
 % 实现 switch 控制语句：若 X==Val 则将 V 存至 X
 switch(X,[Val:V|Cases],Dist) :-
-  (X == Val ->
-    Dist = V
-  ;
-    switch(X, Cases, Dist)
+  (X == Val
+  ->Dist = V
+  ; switch(X, Cases, Dist)
   ).
 
 % 获取 Fact 的谓词名称，保存至 X
@@ -33,7 +29,7 @@ assertNeg(Predtuple) :-
   nth0(1,Predtuple,PredArity),
   functor(T,PredName,PredArity),
   term_string(T,Tstr),
-  string_concat(Tstr, ' :- fail', Negstr),
+  string_concat(Tstr,' :- fail',Negstr),
   term_string(Neg,Negstr),
   assertz(Neg).
 
@@ -71,80 +67,84 @@ clearAll(Preds) :-
 
 % 已每行一个事实的形式打印事实库 Facts 中的所有事实
 printFact(Facts) :-
-  (Facts = [] ->
-  (true);
-      nth0(0,Facts,First,Rest),
-      writeln(First),
-      printFact(Rest) % 递归
+  (Facts = []
+  ->true
+  ; nth0(0,Facts,First,Rest),
+    writeln(First),
+    printFact(Rest) % 递归
+  ).
+
+matchPerm(P,N,A) :-
+  (P = []
+  ->true
+  ; nth0(0,P,C,R),
+    nth0(0,C,M),
+    (N = M
+    ->nth0(2,C,A)
+    ; matchPerm(R,N,A)
+    )
   ).
 
 % 将事实 Fact 添加至 FactLib 中，一并添加其谓词规定的等价排列形式，结果存至 To
-appendFact(FactLib,To,Fact) :- 
+appendFact(P,FactLib,To,Fact) :- 
   functorName(Fact,Name),
   functorArgs(Fact,Arg),
-  switch(Name,[
-    'square' : rcycPerm(PArg,Arg),
-    'ang45' : angPerm(PArg,Arg),
-    'ang90' : angPerm(PArg,Arg),
-    'eqlen' : biPairPerm(PArg,Arg),
-    'parallel' : biPairPerm(PArg,Arg),
-    'intersection' : (
-      append([InterPoint],Ls,Arg),
-      biPairPerm(Pls,Ls),
-      append([InterPoint],Pls,PArg)
-    ),
-    'rotate_from_tri' : triPairMatchPerm(PArg,Arg)
-  ],PermRule),
-  (var(PermRule) ->
-      PermRule = (PArg = Arg)
+  matchPerm(P,Name,PermRule),
+  (var(PermRule)
+  ->PermRule = (=)
   ;true),
-  findall(Nfact,(PermRule,append([Name],PArg,NfactL),Nfact =.. NfactL),PL),
-  append(FactLib,PL,To).
+  % writeln(PermRule),
+  findall(Nfact,(call(PermRule,PArg,Arg),append([Name],PArg,NfactL),Nfact =.. NfactL),PL),
+  append(FactLib,PL,To),
+  true.
 
 % 初始化事实库，求出 Facts 中所有事实的所有排列形式，存于 Lib
-initFacts(Facts,Lib) :-
-  (
-    Facts = [] ->
-      Lib = []
-    ;
-      nth0(0,Facts,First,Rest),
-      initFacts(Rest,Part), % 递归
-      appendFact(Part,Lib,First)
+initFacts(P,Facts,Lib) :-
+  (Facts = []
+  ->Lib = []
+  ; nth0(0,Facts,First,Rest),
+    initFacts(P,Rest,Part), % 递归
+    appendFact(P,Part,Lib,First)
   ).
 
 pFact :- fail.
 % 应用规则库 T 中索引存在于 I 中的所有规则，在包含谓词集 P 的事实库 F 中尝试推导 H
 % 若成功，则将 H 及其所有排列形式添加至事实库 F 中，结果存于 A
 checkddc(P,R,I,F,A,H) :-
-  (alreadyExist(P,F,H) ->
+  (alreadyExist(P,F,H)
     % H 已存在于事实库 F 中，无需进一步推导
-    writeln('==Exist==')
-  ;
-    setTheory(P,F,R,I),
-    (H ->
-      % 推导成功
-      writeln('==OK=='),
+  ->writeln('==Exist==')
+  ; setTheory(P,F,R,I),
+    (H
+    % 推导成功
+    ->writeln('==OK=='),
       clearAll(P),
-      appendFact(F,A,H),
-      (pFact->
-        writeln('==NOW Facts=='),
+      appendFact(P,F,A,H),
+      (pFact
+      ->writeln('==NOW Facts=='),
         printFact(A)
       ;true)
-    ;
-      % 推导失败
-      writeln('==Wrong=='),
+    % 推导失败
+    ; writeln('==Wrong=='),
       clearAll(P)
     )
   ).
-
+inited :- fail.
 proof(P,R,RS,F,A,S) :-
-  (S = [] ->
-    A = F
-  ;
-    nth0(0,S,N,Rest),
-    nth0(0,N,I),
-    nth0(1,N,H),
-    nth0(I,RS,Is),
-    checkddc(P,R,Is,F,X,H),
-    proof(P,R,RS,X,A,Rest)
+  (inited()
+  ->(S = []
+    ->A = F,
+      abolish(inited/0),
+      assertz((inited :- fail))
+    ; nth0(0,S,N,Rest),
+      nth0(0,N,I),
+      nth0(1,N,H),
+      nth0(I,RS,Is),
+      checkddc(P,R,Is,F,X,H),
+      proof(P,R,RS,X,A,Rest)
+    )
+  ; initFacts(P,F,N),
+    abolish(inited/0),
+    assertz((inited :- true)),
+    proof(P,R,RS,N,A,S)
   ).

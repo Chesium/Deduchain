@@ -3,7 +3,8 @@
   rcycPerm/2,
   angPerm/2,
   biPairPerm/2,
-  triPairMatchPerm/2
+  triPairMatchPerm/2,
+  itscPerm/2
 ]).
 
 :- encoding(utf8).
@@ -57,3 +58,8 @@ triPairMatchPerm(X,L) :-
   nth0(I4,L,E),
   nth0(I5,L,F),
   X = [A,B,C,D,E,F].
+
+itscPerm(X,L) :-
+  append([InterPoint],Ls,L),
+  biPairPerm(Pls,Ls),
+  append([InterPoint],Pls,X).

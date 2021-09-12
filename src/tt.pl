@@ -1,17 +1,21 @@
 :- module(tt,[]).
 
+
+:- encoding(utf8).
+:- debug.
+
 :- use_module('proof.pl').
 
 % 测试
 test :-
   Preds = [
-    ['square',4],
-    ['ang45',3],
-    ['ang90',3],
-    ['eqlen',4],
-    ['parallel',4],
-    ['intersection',5],
-    ['rotate_from_tri',6]
+    ['square',4,rcycPerm],
+    ['ang45',3,angPerm],
+    ['ang90',3,angPerm],
+    ['eqlen',4,biPairPerm],
+    ['parallel',4,biPairPerm],
+    ['intersection',5,itscPerm],
+    ['rotate_from_tri',6,triPairMatchPerm]
   ],
   Rules = [
     (
@@ -34,13 +38,12 @@ test :-
     intersection(f,a,e,c,d),
     rotate_from_tri(a,b,g,a,d,e)
   ],
-  initFacts(OriFacts,Facts),
 
   Steps = [
     [0,ang90(a,d,c)],
     [1,eqlen(a,d,d,c)]
   ],
 
-  proof(Preds,Rules,RuleSets,Facts,Ans,Steps),
+  proof:proof(Preds,Rules,RuleSets,OriFacts,Ans,Steps),
 
 true.
