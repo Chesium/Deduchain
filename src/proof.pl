@@ -85,6 +85,16 @@ matchPerm(P,N,A) :-
     )
   ).
 
+getPerm(P,F,A) :-
+  functorName(F,N),
+  functorArgs(F,Arg),
+  matchPerm(P,N,PermRule),
+  (var(PermRule)
+  ->PermRule = (=)
+  ;true),
+  % writeln(PermRule),
+  findall(Nfact,(call(PermRule,PArg,Arg),append([N],PArg,NfactL),Nfact =.. NfactL),A).
+
 % 将事实 Fact 添加至 FactLib 中，一并添加其谓词规定的等价排列形式，结果存至 To
 appendFact(P,FactLib,To,Fact) :- 
   functorName(Fact,Name),
@@ -107,6 +117,13 @@ initFacts(P,Facts,Lib) :-
     appendFact(P,Part,Lib,First)
   ).
 
+listor(L) :-
+  (L = []
+  ->fail
+  ; nth0(0,L,N,R),
+    (N;listor(R))
+  ).
+
 pFact :- fail.
 % 应用规则库 T 中索引存在于 I 中的所有规则，在包含谓词集 P 的事实库 F 中尝试推导 H
 % 若成功，则将 H 及其所有排列形式添加至事实库 F 中，结果存于 A
@@ -115,7 +132,9 @@ checkddc(P,R,I,F,A,H) :-
     % H 已存在于事实库 F 中，无需进一步推导
   ->writeln('==Exist==')
   ; setTheory(P,F,R,I),
-    (H
+    getPerm(P,H,Perm),
+    writeln(Perm),
+    (listor(Perm)
     % 推导成功
     ->writeln('==OK=='),
       clearAll(P),

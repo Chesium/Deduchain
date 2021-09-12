@@ -4,7 +4,8 @@
   angPerm/2,
   biPairPerm/2,
   triPairMatchPerm/2,
-  itscPerm/2
+  itscPerm/2,
+  sidePerm/2
 ]).
 
 :- encoding(utf8).
@@ -28,9 +29,10 @@ angPerm(X,L) :-
   nth0(0,L,A),
   nth0(1,L,B),
   nth0(2,L,C),
+  nth0(3,L,D),
   (
-    X = [A,B,C];
-    X = [C,B,A]
+    X = [A,B,C,D];
+    X = [C,B,A,D]
   ).
 
 % 无序双数对排列：X 和 L 应为四元组，前两个元素和后两个元素分别看作一组，两组排列无序，组内排列无序
@@ -63,3 +65,9 @@ itscPerm(X,L) :-
   append([InterPoint],Ls,L),
   biPairPerm(Pls,Ls),
   append([InterPoint],Pls,X).
+
+sidePerm(X,L) :-
+  append([A,B],[C,D],L),
+  permutation(P1,[A,B]),
+  permutation(P2,[C,D]),
+  append(P1,P2,X).
