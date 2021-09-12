@@ -143,8 +143,8 @@ proof(P,R,RS,F,A,S) :-
       checkddc(P,R,Is,F,X,H),
       proof(P,R,RS,X,A,Rest)
     )
-  ; initFacts(P,F,N),
+  ; initFacts(P,F,NF),
     abolish(inited/0),
     assertz((inited :- true)),
-    proof(P,R,RS,N,A,S)
+    proof(P,R,RS,NF,A,S)
   ).
